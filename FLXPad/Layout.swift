@@ -63,6 +63,32 @@ func globalKey(_ label: String, status: UInt8, _ key: FLX4.Key, color: UIColor =
     }
 }
 
+/// BEAT SYNC: a press sends 0x58; holding it also sends 0x5C (hardware long press; the 1 s delay is a guess).
+func syncKey(deck: Int) -> some View {
+    let status = FLX4.deckNote(deck)
+    var sent = FLX4.sync.note
+    var hold: DispatchWorkItem?, held = false
+    return Control {
+        let v = PadView("BEAT\nSYNC", color: .systemCyan) { down in
+            if down {
+                sent = decks[deck].shift ? FLX4.sync.shifted : FLX4.sync.note
+                if sent == FLX4.sync.note {
+                    let item = DispatchWorkItem { held = true; MIDI.shared.note(status, FLX4.syncLong, true) }
+                    hold = item
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: item)
+                }
+            } else {
+                hold?.cancel()
+                hold = nil
+                if held { held = false; MIDI.shared.note(status, FLX4.syncLong, false) }
+            }
+            MIDI.shared.note(status, sent, down)
+        }
+        v.led = { ledKey(status, FLX4.sync.note) }
+        return v
+    }
+}
+
 func knob(_ label: String, status: UInt8, cc: UInt8, color: UIColor = .systemOrange) -> some View {
     Control { KnobView(label, color: color) { MIDI.shared.cc14(status, cc, $0) } }
 }
@@ -101,14 +127,14 @@ struct DeckView: View {
                             MIDI.shared.note(FLX4.deckNote(deck), FLX4.shift, down)
                         }
                     }
-                    deckKey("BEAT\nSYNC", FLX4.sync, deck: deck, color: .systemCyan)
+                    syncKey(deck: deck)
                     deckKey("CUE", FLX4.cue, deck: deck, color: .systemOrange)
                     deckKey("▶︎ ‖", FLX4.play, deck: deck, color: .systemGreen)
                 }
-                .frame(width: 80)
+                .frame(width: 76)
                 PadsView(deck: deck)
             }
-            .frame(height: 260)
+            .frame(height: 330)
         }
     }
 }
@@ -148,7 +174,7 @@ struct PadsView: View {
     private func pad(_ index: Int) -> some View {
         var sent = (status: UInt8(0), note: UInt8(0))
         return Control {
-            let v = PadView("\(index + 1)", color: .systemGray) { down in
+            let v = PadView("", color: .systemGray, title: { decks[deck].padMode.padLabel(index, deck: deck) }) { down in
                 if down {
                     let state = decks[deck]
                     sent = (FLX4.padStatus(deck, shift: state.shift), state.padMode.firstPad + UInt8(index))
@@ -199,41 +225,43 @@ struct MixerView: View {
                 ChannelStrip(deck: 0)
                 VStack(spacing: 8) {
                     knob("HEAD MIX", status: FLX4.mixerCC, cc: FLX4.headphoneMix, color: .systemGray).frame(height: 64)
+                    Text("BEAT FX").font(.caption2.bold()).foregroundColor(.red).padding(.top, 8)
                     Control {
-                        KnobView("FX LEVEL", value: 0, color: .systemRed) {
+                        KnobView("LEVEL", value: 0, color: .systemRed) {
                             MIDI.shared.send(FLX4.fxCC, FLX4.fxLevel, UInt8(($0 * 127).rounded()))
                         }
                     }
                     .frame(height: 64)
+                    Group {
+                        globalKey("SELECT", status: FLX4.fxNote, FLX4.fxSelect, color: .systemRed)
+                        HStack(spacing: 4) {
+                            Control { PadView("◀", color: .systemRed) { MIDI.shared.note(FLX4.fxNote, FLX4.fxLeft, $0) } }
+                            Control { PadView("▶", color: .systemRed) { MIDI.shared.note(FLX4.fxNote, FLX4.fxRight, $0) } }
+                        }
+                        fxChannel(0)
+                        fxChannel(1)
+                        globalKey("ON", status: FLX4.fxNote, FLX4.fxOnOff, color: .systemRed)
+                    }
+                    .frame(height: 40)
                     Spacer()
                 }
-                .frame(width: 64)
+                .frame(width: 78)
                 ChannelStrip(deck: 1)
             }
 
-            HStack(spacing: 5) {
-                Control { PadView("FX\n◀", color: .systemRed) { MIDI.shared.note(FLX4.fxNote, FLX4.fxLeft, $0) } }
-                Control { PadView("FX\n▶", color: .systemRed) { MIDI.shared.note(FLX4.fxNote, FLX4.fxRight, $0) } }
-                globalKey("FX\nSELECT", status: FLX4.fxNote, FLX4.fxSelect, color: .systemRed)
-                fxChannel(0)
-                fxChannel(1)
-                globalKey("FX\nON", status: FLX4.fxNote, FLX4.fxOnOff, color: .systemRed)
-            }
-            .frame(height: 40)
-
             Control {
-                FaderView("", value: 0.5, center: 0.5, horizontal: true) {
+                FaderView("", value: 0.5, center: 0.5, horizontal: true, thumb: 56) {
                     MIDI.shared.cc14(FLX4.mixerCC, FLX4.crossfader, $0)
                 }
             }
-            .frame(height: 48)
+            .frame(height: 64)
         }
     }
 
     /// One position of the Beat FX channel lever, as an on/off toggle.
     private func fxChannel(_ deck: Int) -> some View {
         let (status, note) = FLX4.fxChannel(deck)
-        return Control { PadView("FX\nCH\(deck + 1)", color: .systemRed, latching: true) { MIDI.shared.note(status, note, $0) } }
+        return Control { PadView("CH\(deck + 1)", color: .systemRed, latching: true) { MIDI.shared.note(status, note, $0) } }
     }
 }
 

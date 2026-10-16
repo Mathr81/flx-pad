@@ -16,6 +16,7 @@ enum FLX4 {
     static let play = Key(note: 0x0B, shifted: 0x0E)
     static let cue = Key(note: 0x0C, shifted: 0x48)
     static let sync = Key(note: 0x58, shifted: 0x60)
+    static let syncLong: UInt8 = 0x5C // sent while SYNC is held, like the hardware (Mixxx: sync lock)
     static let loopIn = Key(note: 0x10, shifted: 0x4C)
     static let loopOut = Key(note: 0x11, shifted: 0x4E)
     static let reloop = Key(note: 0x4D, shifted: 0x50)
@@ -56,6 +57,18 @@ enum FLX4 {
         var modeNote: UInt8 { [0x1B, 0x20, 0x22, 0x69, 0x6D, 0x6F][rawValue] }
         /// Note of pad 1; pad n sends firstPad + n - 1 on padStatus.
         var firstPad: UInt8 { [0x00, 0x20, 0x30, 0x40, 0x60, 0x70][rawValue] }
+
+        /// What pad `index` (0-7) does in Mixxx's FLX4 mapping.
+        func padLabel(_ index: Int, deck: Int) -> String {
+            switch self {
+            case .hotCue: return "CUE \(index + 1)"
+            case .beatJump: return ["◀ 1", "1 ▶", "◀ 2", "2 ▶", "◀ 4", "4 ▶", "◀ 8", "8 ▶"][index]
+            case .sampler: return "S\([1, 2, 3, 4, 9, 10, 11, 12][index] + deck * 4)"
+            case .stems: return index < 4 ? "STEM \(index + 1)" : "FX \(index - 3)"
+            case .beatLoop: return ["1/4", "1/2", "1", "2", "4", "8", "16", "32"][index]
+            case .keyShift: return ["0", "+1", "+2", "+3", "-3", "-2", "-1", "0"][index]
+            }
+        }
     }
 
     /// Normalised 0...1 value -> 14-bit (MSB, LSB).

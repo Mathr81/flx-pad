@@ -6,6 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write # publish releases
+
+env:
+  VERSION: 0.1.${{ github.run_number }}
+
 jobs:
   build:
     runs-on: macos-15
@@ -26,7 +32,8 @@ jobs:
         run: |
           xcodebuild build -quiet -project FLXPad.xcodeproj -scheme FLXPad -configuration Release \
             -sdk iphoneos -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=${{ github.run_number }}
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/FLXPad.app Payload/
           zip -qry FLXPad.ipa Payload
@@ -35,3 +42,21 @@ jobs:
         with:
           name: FLXPad-ipa
           path: FLXPad.ipa
+
+      - name: Publish release and AltStore source
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO=${{ github.repository }}
+          jq -n -f .github/source.jq \
+            --arg repo "$REPO" \
+            --arg version "$VERSION" \
+            --arg build "${{ github.run_number }}" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson size "$(stat -f%z FLXPad.ipa)" \
+            --arg url "https://github.com/$REPO/releases/download/v$VERSION/FLXPad.ipa" \
+            --arg icon "https://raw.githubusercontent.com/$REPO/main/FLXPad/Assets.xcassets/AppIcon.appiconset/icon.png" \
+            > source.json
+          gh release create "v$VERSION" FLXPad.ipa source.json --latest \
+            --title "FLX-Pad $VERSION" --notes "Build $VERSION ($GITHUB_SHA)"

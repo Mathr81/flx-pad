@@ -34,4 +34,11 @@ final class FLX4Tests: XCTestCase {
         XCTAssertEqual(FLX4.padStatus(1, shift: true), 0x9A)
         XCTAssertEqual(FLX4.PadMode.stems.firstPad + 3, 0x43) // stem 4 mute on Mixxx
     }
+
+    func testPadLabelsFollowMixxxMapping() {
+        XCTAssertEqual(FLX4.PadMode.sampler.padLabel(4, deck: 0), "S9")
+        XCTAssertEqual(FLX4.PadMode.sampler.padLabel(7, deck: 1), "S16")
+        XCTAssertEqual(FLX4.PadMode.stems.padLabel(4, deck: 0), "FX 1")
+        XCTAssertEqual(FLX4.PadMode.beatJump.padLabel(1, deck: 0), "1 ▶")
+    }
 }

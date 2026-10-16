@@ -5,9 +5,17 @@ La table MIDI vient du mapping officiel de Mixxx (`res/controllers/Pioneer-DDJ-F
 
 ## Installer l'app (SideStore)
 
-1. Onglet **Actions** du repo → dernier build vert → artifact **FLXPad-ipa** → décompresse le zip.
-2. Ouvre `FLXPad.ipa` avec SideStore (« + » → choisir le fichier).
-3. Au premier lancement, accepte l'accès au **réseau local** (sinon le MIDI ne passe pas).
+**Recommandé : la source**, qui donne les mises à jour directement dans SideStore. Dans SideStore → Sources → **+**, colle :
+
+```
+https://github.com/Mathr81/flx-pad/releases/latest/download/source.json
+```
+
+Sinon, télécharge `FLXPad.ipa` depuis la dernière [release](https://github.com/Mathr81/flx-pad/releases/latest) et ouvre-le avec SideStore.
+
+Chaque push sur `main` publie une release `v0.1.<n>` avec l'IPA et `source.json`.
+
+Au premier lancement, accepte l'accès au **réseau local** (sinon le MIDI ne passe pas).
 
 ## Connecter l'iPad au PC Windows
 
@@ -39,11 +47,13 @@ Avec le plan **Core** ou plus : Préférences → Contrôleur → MIDI → chois
 | Jog, bord | tourner = pitch bend |
 | Knobs / faders | glisser (relatif) ; **double-tap = centre** (EQ, TEMPO, crossfader…) |
 | BROWSE | glisser haut/bas = défiler, tap = PUSH ; SHIFT = zoom waveform |
-| Modes de pads | ligne du bas = SHIFT + ligne du haut sur la vraie FLX4 |
+| Modes de pads | ligne du bas = SHIFT + ligne du haut sur la vraie FLX4 ; chaque pad affiche sa fonction |
+| BEAT SYNC | appui long = sync verrouillé (Mixxx) |
 
 ## Limites
 
-- Pas de mode PAD FX (non géré par le mapping Mixxx), pas d'appui long sur SYNC.
+- Pas de mode PAD FX (non géré par le mapping Mixxx).
+- En BEAT JUMP, SHIFT + pads 7/8 change les tailles de saut : les libellés des pads ne suivent pas.
 - Pas de pré-écoute casque séparée sans carte son USB à 4 sorties (la FLX4 a la sienne).
 - L'app n'envoie rien à la connexion : les positions des faders se synchronisent au premier mouvement.
 

@@ -42,15 +42,17 @@ final class PadView: ControlView {
     private let color: UIColor
     private let latching: Bool
     private let lit: () -> Bool
+    private let title: (() -> String)?
     private let onChange: (Bool) -> Void
     private var down = false { didSet { setNeedsDisplay() } }
     private var latched = false
 
     init(_ label: String, color: UIColor, latching: Bool = false, lit: @escaping () -> Bool = { false },
-         onChange: @escaping (Bool) -> Void) {
+         title: (() -> String)? = nil, onChange: @escaping (Bool) -> Void) {
         self.color = color
         self.latching = latching
         self.lit = lit
+        self.title = title
         self.onChange = onChange
         super.init(label: label)
     }
@@ -79,7 +81,7 @@ final class PadView: ControlView {
         path.lineWidth = down ? 2.5 : 1
         (down ? UIColor.white : color.withAlphaComponent(0.7)).setStroke()
         path.stroke()
-        drawText(label, in: r.insetBy(dx: 3, dy: 2), color: on ? .black : .white)
+        drawText(title?() ?? label, in: r.insetBy(dx: 3, dy: 2), color: on ? .black : .white)
     }
 }
 
@@ -165,12 +167,13 @@ final class KnobView: ValueView {
 
 final class FaderView: ValueView {
     private let isHorizontal: Bool
-    private let thumb: CGFloat = 26
+    private let thumb: CGFloat
     private var labelH: CGFloat { label.isEmpty ? 0 : 14 }
 
-    init(_ label: String, value: Double, center: Double? = nil, horizontal: Bool = false,
+    init(_ label: String, value: Double, center: Double? = nil, horizontal: Bool = false, thumb: CGFloat = 32,
          onChange: @escaping (Double) -> Void) {
         isHorizontal = horizontal
+        self.thumb = thumb
         super.init(label, value: value, center: center, onChange: onChange)
     }
 

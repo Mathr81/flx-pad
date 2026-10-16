@@ -17,10 +17,13 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.mathr81.flxpad
         TARGETED_DEVICE_FAMILY: "2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: FLXPad/Info.plist
       properties:
         CFBundleDisplayName: FLX-Pad
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
