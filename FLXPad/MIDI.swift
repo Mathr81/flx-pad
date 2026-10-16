@@ -1,5 +1,6 @@
 import CoreMIDI
 import Foundation
+import Network
 
 extension Notification.Name {
     /// Posted on the main thread; `object` is the changed key (UInt16), or nil to redraw everything.
@@ -24,10 +25,13 @@ final class MIDI: ObservableObject {
     private var values: [UInt16: UInt8] = [:] // last value received per (status, data1), main thread only
     private var client = MIDIClientRef(), outPort = MIDIPortRef(), inPort = MIDIPortRef()
     private let session = MIDINetworkSession.default()
+    // Browsing Bonjour from the app makes iOS ask for local network access up front.
+    private let browser = NWBrowser(for: .bonjour(type: "_apple-midi._udp", domain: nil), using: .udp)
 
     private init() {
         session.isEnabled = true
         session.connectionPolicy = .anyone
+        browser.start(queue: .main)
         MIDIClientCreateWithBlock("FLX-Pad" as CFString, &client, nil)
         MIDIOutputPortCreate(client, "FLX-Pad Out" as CFString, &outPort)
         MIDIInputPortCreateWithProtocol(client, "FLX-Pad In" as CFString, ._1_0, &inPort) { [weak self] list, _ in
