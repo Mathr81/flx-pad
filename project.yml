@@ -1,0 +1,51 @@
+name: FLXPad
+options:
+  bundleIdPrefix: io.github.mathr81
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  FLXPad:
+    type: application
+    platform: iOS
+    sources: [FLXPad]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.mathr81.flxpad
+        TARGETED_DEVICE_FAMILY: "2"
+    info:
+      path: FLXPad/Info.plist
+      properties:
+        CFBundleDisplayName: FLX-Pad
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocalNetworkUsageDescription: FLX-Pad envoie le MIDI à ton ordinateur via le réseau local (rtpMIDI).
+        NSBonjourServices:
+          - _apple-midi._udp
+  FLXPadTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [FLXPadTests]
+    dependencies:
+      - target: FLXPad
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  FLXPad:
+    build:
+      targets:
+        FLXPad: all
+        FLXPadTests: [test]
+    test:
+      targets: [FLXPadTests]

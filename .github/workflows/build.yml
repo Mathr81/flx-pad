@@ -1,0 +1,37 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Test
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 iPad | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          xcodebuild test -quiet -project FLXPad.xcodeproj -scheme FLXPad -destination "id=$UDID"
+
+      - name: Build unsigned IPA (SideStore signs it on the iPad)
+        run: |
+          xcodebuild build -quiet -project FLXPad.xcodeproj -scheme FLXPad -configuration Release \
+            -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/FLXPad.app Payload/
+          zip -qry FLXPad.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FLXPad-ipa
+          path: FLXPad.ipa
